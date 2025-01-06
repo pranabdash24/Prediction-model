@@ -17,7 +17,7 @@ st.set_page_config(
 # Load the trained model
 model = load_model("stock_model.h5")
 
-# Custom mobile-friendly styling
+# Custom mobile-friendly styling with animations
 st.markdown(
     """
     <style>
@@ -26,6 +26,7 @@ st.markdown(
         background-color: #121212;
         color: #DCDCDC;
         font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        transition: background-color 0.5s ease;
     }
 
     /* Sidebar */
@@ -52,9 +53,10 @@ st.markdown(
         text-align: center;
         color: #FF4500;
         padding-top: 20px;
+        animation: fadeIn 1s ease-out;
     }
 
-    /* Buttons */
+    /* Button Styling */
     .stButton>button {
         background-color: #28a745;
         color: white;
@@ -64,11 +66,12 @@ st.markdown(
         padding: 10px 20px;
         border-radius: 30px;
         box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.2);
-        transition: background-color 0.3s ease;
+        transition: background-color 0.3s ease, transform 0.3s ease;
     }
 
     .stButton>button:hover {
         background-color: #218838;
+        transform: scale(1.05);
     }
 
     /* Input fields */
@@ -79,6 +82,12 @@ st.markdown(
         border: 1px solid #4CAF50;
         padding: 10px 12px;
         font-size: 14px;
+        transition: border-color 0.3s ease;
+    }
+
+    .stTextInput>div>input:focus {
+        border-color: #FF4500;
+        outline: none;
     }
 
     .stSlider>div>input {
@@ -86,15 +95,21 @@ st.markdown(
         color: white;
         border-radius: 10px;
         font-size: 14px;
+        transition: background-color 0.3s ease;
+    }
+
+    .stSlider>div>input:hover {
+        background-color: #3c3c3c;
     }
 
     /* Interactive chart */
     .stAltair .vega-embed {
         border-radius: 10px;
         box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.3);
+        animation: fadeInChart 1s ease-out;
     }
 
-    /* Footer */
+    /* Footer Styling */
     footer {
         font-size: 12px;
         font-weight: bold;
@@ -102,8 +117,31 @@ st.markdown(
         color: #808080;
         padding-right: 20px;
         padding-bottom: 20px;
+        position: fixed;
+        bottom: 0;
+        right: 0;
+        width: 100%;
+        background-color: rgba(0, 0, 0, 0.8);
+        box-shadow: 0px -2px 10px rgba(0, 0, 0, 0.5);
+        animation: fadeInFooter 2s ease-out;
     }
 
+    @keyframes fadeIn {
+        0% { opacity: 0; }
+        100% { opacity: 1; }
+    }
+
+    @keyframes fadeInChart {
+        0% { opacity: 0; }
+        100% { opacity: 1; }
+    }
+
+    @keyframes fadeInFooter {
+        0% { opacity: 0; }
+        100% { opacity: 1; }
+    }
+
+    /* Mobile responsive adjustments */
     @media (max-width: 768px) {
         h1 {
             font-size: 22px;
@@ -268,14 +306,13 @@ if st.session_state.disclaimer_accepted:
             status_placeholder.empty()
             st.error(f"An error occurred: {e}")
 
-    # Footer
-    st.markdown(
-        """
-        <footer>
-            <div style="text-align: right; font-weight: bold; color: #A9A9A9;">
-                By Pranab Dash
-            </div>
-        </footer>
-        """,
-        unsafe_allow_html=True
-    )
+    # Footer with the message centered and styled
+st.markdown(
+    """
+    <footer style="text-align: center; padding: 20px; font-weight: bold; color: #A9A9A9; font-size: 14px;">
+        Made with ❤️ by <span style="color: #FF4500;">Pranab</span>
+    </footer>
+    """,
+    unsafe_allow_html=True
+)
+
