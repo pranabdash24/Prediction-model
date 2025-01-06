@@ -133,10 +133,11 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# Disclaimer and Terms Pop-up
-disclaimer_accepted = st.session_state.get("disclaimer_accepted", False)
+# Disclaimer and Terms Pop-up (use session_state to track if accepted)
+if "disclaimer_accepted" not in st.session_state:
+    st.session_state.disclaimer_accepted = False
 
-if not disclaimer_accepted:
+if not st.session_state.disclaimer_accepted:
     disclaimer = """
     **Disclaimer:**
 
@@ -151,11 +152,10 @@ if not disclaimer_accepted:
     st.warning(disclaimer, icon="⚠️")
     if st.button("Accept"):
         st.session_state.disclaimer_accepted = True
-        # Avoid calling rerun immediately after Accept
-        st.experimental_rerun()  # Only rerun once after the user clicks "Accept"
+        st.experimental_rerun()  # Rerun only after the user accepts the disclaimer
 
-# Title of the web app
-if disclaimer_accepted:
+# Title of the web app after disclaimer acceptance
+if st.session_state.disclaimer_accepted:
     st.markdown("<h1>📉 Stock Price Prediction</h1>", unsafe_allow_html=True)
 
     # Main content
