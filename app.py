@@ -5,6 +5,7 @@ import pandas as pd
 from sklearn.preprocessing import MinMaxScaler
 from tensorflow.keras.models import load_model
 import altair as alt
+import streamlit_analytics  # Importing the analytics package
 
 # Set page configuration for better mobile responsiveness
 st.set_page_config(
@@ -35,7 +36,7 @@ st.markdown(
 # Load the trained model
 model = load_model("stock_model.h5")
 
-# Custom mobile-friendly styling with animations
+# Custom mobile-friendly styling
 st.markdown(
     """
     <style>
@@ -44,7 +45,6 @@ st.markdown(
         background-color: #121212;
         color: #DCDCDC;
         font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        transition: background-color 0.5s ease;
     }
 
     /* Sidebar */
@@ -71,10 +71,9 @@ st.markdown(
         text-align: center;
         color: #FF4500;
         padding-top: 20px;
-        animation: fadeIn 1s ease-out;
     }
 
-    /* Button Styling */
+    /* Buttons */
     .stButton>button {
         background-color: #28a745;
         color: white;
@@ -84,12 +83,11 @@ st.markdown(
         padding: 10px 20px;
         border-radius: 30px;
         box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.2);
-        transition: background-color 0.3s ease, transform 0.3s ease;
+        transition: background-color 0.3s ease;
     }
 
     .stButton>button:hover {
         background-color: #218838;
-        transform: scale(1.05);
     }
 
     /* Input fields */
@@ -100,12 +98,6 @@ st.markdown(
         border: 1px solid #4CAF50;
         padding: 10px 12px;
         font-size: 14px;
-        transition: border-color 0.3s ease;
-    }
-
-    .stTextInput>div>input:focus {
-        border-color: #FF4500;
-        outline: none;
     }
 
     .stSlider>div>input {
@@ -113,53 +105,23 @@ st.markdown(
         color: white;
         border-radius: 10px;
         font-size: 14px;
-        transition: background-color 0.3s ease;
-    }
-
-    .stSlider>div>input:hover {
-        background-color: #3c3c3c;
     }
 
     /* Interactive chart */
     .stAltair .vega-embed {
         border-radius: 10px;
         box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.3);
-        animation: fadeInChart 1s ease-out;
     }
 
-    /* Footer Styling */
+    /* Footer */
     footer {
-        font-size: 12px;
+        font-size: 14px;
         font-weight: bold;
-        text-align: right;
-        color: #808080;
-        padding-right: 20px;
-        padding-bottom: 20px;
-        position: fixed;
-        bottom: 0;
-        right: 0;
-        width: 100%;
-        background-color: rgba(0, 0, 0, 0.8);
-        box-shadow: 0px -2px 10px rgba(0, 0, 0, 0.5);
-        animation: fadeInFooter 2s ease-out;
+        text-align: center;
+        color: #A9A9A9;
+        padding: 20px;
     }
 
-    @keyframes fadeIn {
-        0% { opacity: 0; }
-        100% { opacity: 1; }
-    }
-
-    @keyframes fadeInChart {
-        0% { opacity: 0; }
-        100% { opacity: 1; }
-    }
-
-    @keyframes fadeInFooter {
-        0% { opacity: 0; }
-        100% { opacity: 1; }
-    }
-
-    /* Mobile responsive adjustments */
     @media (max-width: 768px) {
         h1 {
             font-size: 22px;
@@ -220,6 +182,10 @@ if st.session_state.disclaimer_accepted:
     ticker = st.text_input("Stock Ticker (e.g., AAPL, TSLA):", value="AAPL")
     start_date = st.date_input("Start Date:", pd.to_datetime("2015-01-01"))
     end_date = st.date_input("End Date:", pd.to_datetime("2023-12-31"))
+
+    # Track user interaction using streamlit-analytics
+    with streamlit_analytics.track():
+        ticker_input = st.text_input("Enter a stock ticker to track:", "AAPL")
 
     # Slider for Lookback Period (in days)
     lookback = st.slider("Lookback Period (days):", min_value=30, max_value=200, value=60, step=1)
@@ -325,11 +291,11 @@ if st.session_state.disclaimer_accepted:
             st.error(f"An error occurred: {e}")
 
     # Footer with the message centered and styled
-st.markdown(
-    """
-    <footer style="text-align: center; padding: 20px; font-weight: bold; color: #A9A9A9; font-size: 14px;">
-        Made with ❤️ by <span style="color: #FF4500;">Pranab</span>
-    </footer>
-    """,
-    unsafe_allow_html=True
-)
+    st.markdown(
+        """
+        <footer style="text-align: center; padding: 20px; font-weight: bold; color: #A9A9A9; font-size: 14px;">
+            Made with ❤️ by <span style="color: #FF4500;">Pranab</span>
+        </footer>
+        """,
+        unsafe_allow_html=True
+    )
