@@ -6,68 +6,127 @@ from sklearn.preprocessing import MinMaxScaler
 from tensorflow.keras.models import load_model
 import altair as alt
 
-# Set page configuration
+# Set page configuration for better mobile responsiveness
 st.set_page_config(
     page_title="Stock Price Prediction",
     page_icon="📉",
-    layout="wide",
+    layout="centered",  # Centered layout for better mobile experience
     initial_sidebar_state="expanded",
 )
 
 # Load the trained model
 model = load_model("stock_model.h5")
 
-# Apply custom styling for a professional look
+# Custom mobile-friendly styling
 st.markdown(
     """
     <style>
-    /* Background styling */
+    /* Global styles */
     body {
-        background-color: #1E1E1E;
-        color: white;
-        font-family: Arial, sans-serif;
+        background-color: #121212;
+        color: #DCDCDC;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     }
-    /* Sidebar styling */
+
+    /* Sidebar */
     [data-testid="stSidebar"] {
-        background-color: #2E2E2E;
-        color: white;
+        background-color: #1E1E1E;
+        color: #FFFFFF;
+        font-size: 16px;
+        font-weight: 500;
+        padding-top: 10px;
     }
-    /* Header styling */
+
+    /* Header */
     .css-10trblm.e16nr0p33 {
         font-size: 30px;
-        color: #F2F2F2;
+        font-weight: bold;
+        color: #A9A9A9;
+        text-align: center;
     }
-    /* Title styling */
+
+    /* Title */
     h1 {
-        font-size: 36px;
-        color: #F2F2F2;
+        font-size: 28px;
+        font-weight: bold;
+        text-align: center;
+        color: #FF4500;
+        padding-top: 20px;
     }
-    /* Button Styling */
+
+    /* Buttons */
     .stButton>button {
-        background-color: #4CAF50;
+        background-color: #28a745;
         color: white;
-        border-radius: 5px;
-        font-size: 16px;
-        padding: 10px 20px;
+        font-size: 14px;
+        font-weight: bold;
         border: none;
+        padding: 10px 20px;
+        border-radius: 30px;
+        box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.2);
+        transition: background-color 0.3s ease;
     }
+
     .stButton>button:hover {
-        background-color: #45a049;
+        background-color: #218838;
     }
-    /* Footer Styling */
+
+    /* Input fields */
+    .stTextInput>div>input {
+        background-color: #2F2F2F;
+        color: white;
+        border-radius: 10px;
+        border: 1px solid #4CAF50;
+        padding: 10px 12px;
+        font-size: 14px;
+    }
+
+    .stSlider>div>input {
+        background-color: #2F2F2F;
+        color: white;
+        border-radius: 10px;
+        font-size: 14px;
+    }
+
+    /* Interactive chart */
+    .stAltair .vega-embed {
+        border-radius: 10px;
+        box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.3);
+    }
+
+    /* Footer */
     footer {
+        font-size: 12px;
         font-weight: bold;
         text-align: right;
-        color: #A9A9A9;
+        color: #808080;
+        padding-right: 20px;
+        padding-bottom: 20px;
     }
-    .stSidebar .css-1d391kg {
-        color: white;
-    }
-    /* Modify the input fields for consistency */
-    .stTextInput>div>input {
-        background-color: #444444;
-        color: white;
-        border: 1px solid #555555;
+
+    @media (max-width: 768px) {
+        h1 {
+            font-size: 22px;
+            padding-top: 10px;
+        }
+
+        .stButton>button {
+            padding: 8px 18px;
+            font-size: 12px;
+        }
+
+        .stTextInput>div>input {
+            font-size: 12px;
+            padding: 8px 10px;
+        }
+
+        .stSlider>div>input {
+            font-size: 12px;
+        }
+
+        .stAltair .vega-embed {
+            width: 100%;
+        }
     }
     </style>
     """,
@@ -75,9 +134,9 @@ st.markdown(
 )
 
 # Title of the web app
-st.markdown("<h1 style='text-align: center;'>📉 Stock Price Prediction</h1>", unsafe_allow_html=True)
+st.markdown("<h1>📉 Stock Price Prediction</h1>", unsafe_allow_html=True)
 
-# Sidebar input fields
+# Sidebar for user inputs
 with st.sidebar:
     st.header("Settings")
     st.write("Configure the parameters for the stock prediction model.")
@@ -99,7 +158,7 @@ if start_prediction:
     status_placeholder = st.empty()
     
     try:
-        # Show the "Fetching data" message
+        # Show "Fetching data" message
         status_placeholder.info("Fetching data... Please wait.")
         
         # Fetch stock data
@@ -108,7 +167,7 @@ if start_prediction:
         # Clear the "Fetching data" message
         status_placeholder.empty()
 
-        # If the data is valid
+        # If data is empty
         if data.empty:
             st.error("No stock data available for the provided ticker and date range.")
         else:
@@ -116,28 +175,28 @@ if start_prediction:
             st.subheader(f"Stock Data for {ticker}")
             st.dataframe(data.tail())
 
-            # Preprocessing the data
+            # Preprocess the data for prediction
             scaler = MinMaxScaler(feature_range=(0, 1))
             data_scaled = scaler.fit_transform(data[['Close']])
 
-            # Prepare data for prediction
+            # Prepare data for LSTM
             X, y = [], []
             for i in range(lookback, len(data_scaled)):
                 X.append(data_scaled[i - lookback:i, 0])  # Input sequence
-                y.append(data_scaled[i, 0])  # Next day's price
+                y.append(data_scaled[i, 0])  # Target value (Next day's price)
 
             # Convert lists to numpy arrays
             X, y = np.array(X), np.array(y)
 
-            # Reshape X for LSTM (samples, time_steps, features)
+            # Reshape X to match LSTM input format (samples, time_steps, features)
             X = X.reshape(X.shape[0], X.shape[1], 1)
 
-            # Split data into train and test sets (80% train, 20% test)
+            # Split into training and testing sets (80% train, 20% test)
             train_size = int(len(X) * 0.8)
             X_train, X_test = X[:train_size], X[train_size:]
             y_train, y_test = y[:train_size], y[train_size:]
 
-            # Make predictions for the forecast days
+            # Make predictions for forecast days
             input_data = data_scaled[-lookback:].reshape(1, lookback, 1)
             predictions = []
 
@@ -145,21 +204,21 @@ if start_prediction:
                 predicted_price = model.predict(input_data)
                 predictions.append(predicted_price[0, 0])
 
-                # Update input_data for next day prediction
+                # Update input_data for next day's prediction
                 input_data = np.append(input_data[:, 1:, :], predicted_price.reshape(1, 1, 1), axis=1)
 
-            # Rescale predictions to original scale
+            # Rescale predictions back to original scale
             predictions_rescaled = scaler.inverse_transform(np.array(predictions).reshape(-1, 1))
 
             # Prepare forecast dates
             forecast_dates = pd.date_range(data.index[-1], periods=forecast_days + 1, freq='D')[1:]
 
-            # Create dataframes for Altair chart
+            # Combine historical data with forecast data for visualization
             historical_data = pd.DataFrame({'Date': data.index, 'Price': data['Close'].values.flatten(), 'Type': 'Historical'})
             forecast_data = pd.DataFrame({'Date': forecast_dates, 'Price': predictions_rescaled.flatten(), 'Type': 'Forecast'})
             combined_data = pd.concat([historical_data, forecast_data])
 
-            # Altair Chart
+            # Altair chart for visualization
             chart = alt.Chart(combined_data).mark_line(point=True).encode(
                 x='Date:T',
                 y='Price:Q',
@@ -167,14 +226,14 @@ if start_prediction:
                 tooltip=['Date:T', 'Price:Q', 'Type:N']
             ).properties(
                 title=f"{ticker} Stock Price Prediction",
-                width=900,
-                height=500
+                width=800,
+                height=400
             ).interactive()
 
-            # Render interactive chart
+            # Display interactive chart
             st.altair_chart(chart, use_container_width=True)
 
-            # Display predicted stock prices
+            # Display forecasted stock prices
             st.subheader(f"Predicted Stock Prices for the Next {forecast_days} Days:")
             for i, date in enumerate(forecast_dates):
                 st.write(f"{date.date()}: ${predictions_rescaled[i][0]:.2f}")
@@ -183,16 +242,18 @@ if start_prediction:
             st.success("Prediction Successful!")
 
     except Exception as e:
-        # Clear the "Fetching data" message and display the error
+        # Clear "Fetching data" message and display error
         status_placeholder.empty()
         st.error(f"An error occurred: {e}")
 
 # Footer
 st.markdown(
     """
-    <div style="text-align: right; font-weight: bold; color: #A9A9A9;">
-        By Pranab Dash
-    </div>
+    <footer>
+        <div style="text-align: right; font-weight: bold; color: #A9A9A9;">
+            By Pranab Dash
+        </div>
+    </footer>
     """,
     unsafe_allow_html=True
 )
