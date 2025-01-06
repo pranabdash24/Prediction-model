@@ -11,7 +11,7 @@ st.set_page_config(
     page_title="Stock Price Prediction",
     page_icon="📉",
     layout="centered",  # Centered layout for better mobile experience
-    initial_sidebar_state="expanded",
+    initial_sidebar_state="collapsed",  # Start with sidebar collapsed
 )
 
 # Load the trained model
@@ -133,127 +133,150 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# Title of the web app
-st.markdown("<h1>📉 Stock Price Prediction</h1>", unsafe_allow_html=True)
+# Disclaimer and Terms Pop-up
+disclaimer_accepted = st.session_state.get("disclaimer_accepted", False)
 
-# Sidebar for user inputs
-with st.sidebar:
-    st.header("Settings")
-    st.write("Configure the parameters for the stock prediction model.")
+if not disclaimer_accepted:
+    disclaimer = """
+    **Disclaimer:**
+
+    This is a stock price prediction app created for educational purposes. 
+    The model is in beta and may not provide accurate predictions. 
+    Neither the app nor the developer are legally responsible for any financial losses incurred 
+    based on the predictions or information provided by this app. Use at your own risk.
+
+    By clicking "Accept", you acknowledge that you have read and understood the disclaimer.
+    """
+
+    st.warning(disclaimer, icon="⚠️")
+    if st.button("Accept"):
+        st.session_state.disclaimer_accepted = True
+        st.experimental_rerun()  # Rerun the app to remove the disclaimer
+
+# Title of the web app
+if disclaimer_accepted:
+    st.markdown("<h1>📉 Stock Price Prediction</h1>", unsafe_allow_html=True)
+
+    # Main content
+    st.header("Configure Stock Prediction Model")
+    st.write("Please configure the settings below to start prediction.")
+
+    # Dropdowns and sliders inside the main area (outside of sidebar)
     ticker = st.text_input("Stock Ticker (e.g., AAPL, TSLA):", value="AAPL")
     start_date = st.date_input("Start Date:", pd.to_datetime("2015-01-01"))
     end_date = st.date_input("End Date:", pd.to_datetime("2023-12-31"))
-    
+
     # Slider for Lookback Period (in days)
     lookback = st.slider("Lookback Period (days):", min_value=30, max_value=200, value=60, step=1)
-    
+
     # Slider for Forecast Days (in days)
     forecast_days = st.slider("Days to Forecast:", min_value=1, max_value=30, value=5, step=1)
-    
+
+    # Start Prediction button
     start_prediction = st.button("Start Prediction", key="start_prediction")
 
-# Main page logic
-if start_prediction:
-    # Create a placeholder for status message
-    status_placeholder = st.empty()
-    
-    try:
-        # Show "Fetching data" message
-        status_placeholder.info("Fetching data... Please wait.")
-        
-        # Fetch stock data
-        data = yf.download(ticker, start=start_date, end=end_date)
+    # Main page logic
+    if start_prediction:
+        # Create a placeholder for status message
+        status_placeholder = st.empty()
 
-        # Clear the "Fetching data" message
-        status_placeholder.empty()
+        try:
+            # Show "Fetching data" message
+            status_placeholder.info("Fetching data... Please wait.")
+            
+            # Fetch stock data
+            data = yf.download(ticker, start=start_date, end=end_date)
 
-        # If data is empty
-        if data.empty:
-            st.error("No stock data available for the provided ticker and date range.")
-        else:
-            # Display stock data
-            st.subheader(f"Stock Data for {ticker}")
-            st.dataframe(data.tail())
+            # Clear the "Fetching data" message
+            status_placeholder.empty()
 
-            # Preprocess the data for prediction
-            scaler = MinMaxScaler(feature_range=(0, 1))
-            data_scaled = scaler.fit_transform(data[['Close']])
+            # If data is empty
+            if data.empty:
+                st.error("No stock data available for the provided ticker and date range.")
+            else:
+                # Display stock data
+                st.subheader(f"Stock Data for {ticker}")
+                st.dataframe(data.tail())
 
-            # Prepare data for LSTM
-            X, y = [], []
-            for i in range(lookback, len(data_scaled)):
-                X.append(data_scaled[i - lookback:i, 0])  # Input sequence
-                y.append(data_scaled[i, 0])  # Target value (Next day's price)
+                # Preprocess the data for prediction
+                scaler = MinMaxScaler(feature_range=(0, 1))
+                data_scaled = scaler.fit_transform(data[['Close']])
 
-            # Convert lists to numpy arrays
-            X, y = np.array(X), np.array(y)
+                # Prepare data for LSTM
+                X, y = [], []
+                for i in range(lookback, len(data_scaled)):
+                    X.append(data_scaled[i - lookback:i, 0])  # Input sequence
+                    y.append(data_scaled[i, 0])  # Target value (Next day's price)
 
-            # Reshape X to match LSTM input format (samples, time_steps, features)
-            X = X.reshape(X.shape[0], X.shape[1], 1)
+                # Convert lists to numpy arrays
+                X, y = np.array(X), np.array(y)
 
-            # Split into training and testing sets (80% train, 20% test)
-            train_size = int(len(X) * 0.8)
-            X_train, X_test = X[:train_size], X[train_size:]
-            y_train, y_test = y[:train_size], y[train_size:]
+                # Reshape X to match LSTM input format (samples, time_steps, features)
+                X = X.reshape(X.shape[0], X.shape[1], 1)
 
-            # Make predictions for forecast days
-            input_data = data_scaled[-lookback:].reshape(1, lookback, 1)
-            predictions = []
+                # Split into training and testing sets (80% train, 20% test)
+                train_size = int(len(X) * 0.8)
+                X_train, X_test = X[:train_size], X[train_size:]
+                y_train, y_test = y[:train_size], y[train_size:]
 
-            for _ in range(forecast_days):
-                predicted_price = model.predict(input_data)
-                predictions.append(predicted_price[0, 0])
+                # Make predictions for forecast days
+                input_data = data_scaled[-lookback:].reshape(1, lookback, 1)
+                predictions = []
 
-                # Update input_data for next day's prediction
-                input_data = np.append(input_data[:, 1:, :], predicted_price.reshape(1, 1, 1), axis=1)
+                for _ in range(forecast_days):
+                    predicted_price = model.predict(input_data)
+                    predictions.append(predicted_price[0, 0])
 
-            # Rescale predictions back to original scale
-            predictions_rescaled = scaler.inverse_transform(np.array(predictions).reshape(-1, 1))
+                    # Update input_data for next day's prediction
+                    input_data = np.append(input_data[:, 1:, :], predicted_price.reshape(1, 1, 1), axis=1)
 
-            # Prepare forecast dates
-            forecast_dates = pd.date_range(data.index[-1], periods=forecast_days + 1, freq='D')[1:]
+                # Rescale predictions back to original scale
+                predictions_rescaled = scaler.inverse_transform(np.array(predictions).reshape(-1, 1))
 
-            # Combine historical data with forecast data for visualization
-            historical_data = pd.DataFrame({'Date': data.index, 'Price': data['Close'].values.flatten(), 'Type': 'Historical'})
-            forecast_data = pd.DataFrame({'Date': forecast_dates, 'Price': predictions_rescaled.flatten(), 'Type': 'Forecast'})
-            combined_data = pd.concat([historical_data, forecast_data])
+                # Prepare forecast dates
+                forecast_dates = pd.date_range(data.index[-1], periods=forecast_days + 1, freq='D')[1:]
 
-            # Altair chart for visualization
-            chart = alt.Chart(combined_data).mark_line(point=True).encode(
-                x='Date:T',
-                y='Price:Q',
-                color='Type:N',
-                tooltip=['Date:T', 'Price:Q', 'Type:N']
-            ).properties(
-                title=f"{ticker} Stock Price Prediction",
-                width=800,
-                height=400
-            ).interactive()
+                # Combine historical data with forecast data for visualization
+                historical_data = pd.DataFrame({'Date': data.index, 'Price': data['Close'].values.flatten(), 'Type': 'Historical'})
+                forecast_data = pd.DataFrame({'Date': forecast_dates, 'Price': predictions_rescaled.flatten(), 'Type': 'Forecast'})
+                combined_data = pd.concat([historical_data, forecast_data])
 
-            # Display interactive chart
-            st.altair_chart(chart, use_container_width=True)
+                # Altair chart for visualization
+                chart = alt.Chart(combined_data).mark_line(point=True).encode(
+                    x='Date:T',
+                    y='Price:Q',
+                    color='Type:N',
+                    tooltip=['Date:T', 'Price:Q', 'Type:N']
+                ).properties(
+                    title=f"{ticker} Stock Price Prediction",
+                    width=800,
+                    height=400
+                ).interactive()
 
-            # Display forecasted stock prices
-            st.subheader(f"Predicted Stock Prices for the Next {forecast_days} Days:")
-            for i, date in enumerate(forecast_dates):
-                st.write(f"{date.date()}: ${predictions_rescaled[i][0]:.2f}")
+                # Display interactive chart
+                st.altair_chart(chart, use_container_width=True)
 
-            # Display success message
-            st.success("Prediction Successful!")
+                # Display forecasted stock prices
+                st.subheader(f"Predicted Stock Prices for the Next {forecast_days} Days:")
+                for i, date in enumerate(forecast_dates):
+                    st.write(f"{date.date()}: ${predictions_rescaled[i][0]:.2f}")
 
-    except Exception as e:
-        # Clear "Fetching data" message and display error
-        status_placeholder.empty()
-        st.error(f"An error occurred: {e}")
+                # Display success message
+                st.success("Prediction Successful!")
 
-# Footer
-st.markdown(
-    """
-    <footer>
-        <div style="text-align: right; font-weight: bold; color: #A9A9A9;">
-            By Pranab Dash
-        </div>
-    </footer>
-    """,
-    unsafe_allow_html=True
-)
+        except Exception as e:
+            # Clear "Fetching data" message and display error
+            status_placeholder.empty()
+            st.error(f"An error occurred: {e}")
+
+    # Footer
+    st.markdown(
+        """
+        <footer>
+            <div style="text-align: right; font-weight: bold; color: #A9A9A9;">
+                By Pranab Dash
+            </div>
+        </footer>
+        """,
+        unsafe_allow_html=True
+    )
