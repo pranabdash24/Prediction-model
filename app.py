@@ -151,7 +151,8 @@ if not disclaimer_accepted:
     st.warning(disclaimer, icon="⚠️")
     if st.button("Accept"):
         st.session_state.disclaimer_accepted = True
-        st.experimental_rerun()  # Rerun the app to remove the disclaimer
+        # Avoid calling rerun immediately after Accept
+        st.experimental_rerun()  # Only rerun once after the user clicks "Accept"
 
 # Title of the web app
 if disclaimer_accepted:
