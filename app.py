@@ -139,26 +139,24 @@ if "disclaimer_accepted" not in st.session_state:
 
 if not st.session_state.disclaimer_accepted:
     disclaimer = """
-    **Disclaimer:**
-
+    **Disclaimer:**  
     This is a stock price prediction app created for educational purposes. 
     The model is in beta and may not provide accurate predictions. 
     Neither the app nor the developer are legally responsible for any financial losses incurred 
     based on the predictions or information provided by this app. Use at your own risk.
-
     By clicking "Accept", you acknowledge that you have read and understood the disclaimer.
     """
-
     st.warning(disclaimer, icon="⚠️")
+    
+    # Button to accept the disclaimer and proceed to the prediction section
     if st.button("Accept"):
         st.session_state.disclaimer_accepted = True
-        st.experimental_rerun()  # Rerun only after the user accepts the disclaimer
 
 # Title of the web app after disclaimer acceptance
 if st.session_state.disclaimer_accepted:
     st.markdown("<h1>📉 Stock Price Prediction</h1>", unsafe_allow_html=True)
-
-    # Main content
+    
+    # Main content goes here (the rest of the code remains the same)
     st.header("Configure Stock Prediction Model")
     st.write("Please configure the settings below to start prediction.")
 
