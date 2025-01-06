@@ -14,6 +14,24 @@ st.set_page_config(
     initial_sidebar_state="collapsed",  # Start with sidebar collapsed
 )
 
+# Add Google Analytics tracking script to your Streamlit app
+tracking_id = "G-5FFBF537BK"  # Replace with your actual tracking ID
+
+st.markdown(
+    f"""
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id={tracking_id}"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){{dataLayer.push(arguments);}}
+        gtag('js', new Date());
+
+        gtag('config', '{tracking_id}');
+    </script>
+    """,
+    unsafe_allow_html=True
+)
+
 # Load the trained model
 model = load_model("stock_model.h5")
 
@@ -315,4 +333,3 @@ st.markdown(
     """,
     unsafe_allow_html=True
 )
-
