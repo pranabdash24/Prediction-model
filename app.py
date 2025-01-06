@@ -218,8 +218,8 @@ if st.session_state.disclaimer_accepted:
 
     # Dropdowns and sliders inside the main area (outside of sidebar)
     ticker = st.text_input("Stock Ticker (e.g., AAPL, TSLA):", value="AAPL")
-    start_date = st.date_input("Start Date:", pd.to_datetime("2015-01-01"))
-    end_date = st.date_input("End Date:", pd.to_datetime("2023-12-31"))
+    start_date = st.date_input("Start Date:", pd.to_datetime("2022-01-01"))
+    end_date = st.date_input("End Date:", pd.to_datetime("2025-01-01"))
 
     # Slider for Lookback Period (in days)
     lookback = st.slider("Lookback Period (days):", min_value=30, max_value=200, value=60, step=1)
